@@ -1,19 +1,13 @@
-import {
-  createContext,
-  Dispatch,
-  ReactNode,
-  SetStateAction,
-  useContext,
-  useState,
-} from "react";
-import { AppState, TPerson } from "@/types";
+import { createContext, ReactNode, useContext, useState } from "react";
+import { AppState, LocalStorageKey, TPerson } from "@/types";
 import { isAppState } from "@/utils/is-app-state";
+import { SetPeopleAction, SetAppStateAction } from "../types";
 
 type TCtx = {
   people: TPerson[];
   appState: AppState;
-  setPeople: Dispatch<SetStateAction<TPerson[]>>;
-  setAppState: Dispatch<SetStateAction<AppState>>;
+  setPeople: SetPeopleAction;
+  setAppState: SetAppStateAction;
 };
 
 type Props = {
@@ -25,19 +19,17 @@ const AppStateCtx = createContext<TCtx | undefined>(undefined);
 export function AppStateProvider(props: Props) {
   const { children } = props;
 
-  const storedAppState = localStorage.getItem("app-state");
+  const storePeople = localStorage.getItem(LocalStorageKey.PEOPLE);
+  const storedAppState = localStorage.getItem(LocalStorageKey.APP_STATE);
 
-  console.log({ storedAppState });
-  console.log("con", isAppState(storedAppState));
+  const initialPeople = storePeople ? JSON.parse(storePeople) : [];
 
   const initialAppState =
     storedAppState && isAppState(storedAppState)
       ? storedAppState
       : AppState.SETUP;
 
-  console.log({ initialAppState });
-
-  const [people, setPeople] = useState<TPerson[]>([]);
+  const [people, setPeople] = useState<TPerson[]>(initialPeople);
   const [appState, setAppState] = useState<AppState>(initialAppState);
 
   const value = {

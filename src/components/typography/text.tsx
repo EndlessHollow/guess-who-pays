@@ -10,10 +10,20 @@ type Props = HTMLAttributes<HTMLParagraphElement> &
   };
 
 export function Text(props: Props) {
-  const { as: Tag = "p", size, weight, color, className, children } = props;
+  const {
+    as: Tag = "p",
+    size,
+    weight,
+    color,
+    align,
+    className,
+    children,
+  } = props;
 
   return (
-    <Tag className={cn(textVariants({ size, weight, color, className }))}>
+    <Tag
+      className={cn(textVariants({ size, weight, color, align, className }))}
+    >
       {children}
     </Tag>
   );

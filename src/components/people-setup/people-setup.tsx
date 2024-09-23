@@ -6,11 +6,12 @@ import { Input } from "@components/input";
 import { Flex, Grid } from "@components/layout";
 import { List } from "@components/list";
 import { Heading, Text } from "@components/typography";
-import { AppState, PersonState, TPerson } from "@/types";
+import { AppState, LocalStorageKey, PersonState, TPerson } from "@/types";
 import { useAppState } from "@contexts/use-app-state";
-import { Dispatch, Fragment, useState } from "react";
+import { Fragment, useState } from "react";
 import { Bot } from "lucide-react";
-import { TInputState } from "./types";
+import { setHasErrAction, setInputStateAction, TInputState } from "./types";
+import { SetPeopleAction, SetAppStateAction } from "@/types";
 
 export function PeopleSetup() {
   const { people, setPeople, setAppState } = useAppState();
@@ -18,6 +19,7 @@ export function PeopleSetup() {
     value: "",
     hasError: false,
   });
+  const [hasErr, setHasErr] = useState(false);
 
   return (
     <Grid gap="4">
@@ -25,7 +27,7 @@ export function PeopleSetup() {
         <Flex
           direction="column"
           gap="2"
-          className="lg:flex-row lg:w-3/6 lg:items-center"
+          className="md:flex-row md:w-3/6 md:items-center"
         >
           <Input
             value={inputState.value}
@@ -76,19 +78,20 @@ export function PeopleSetup() {
         </Grid>
       </Card>
       <Button
-        onClick={() => handleStart(setAppState)}
-        className="place-self-center lg:place-self-start"
+        onClick={() => handleStart(people, setPeople, setAppState, setHasErr)}
+        className="md:place-self-start"
       >
         Start
       </Button>
+      {hasErr && <Text color="error">You need at least two players</Text>}
     </Grid>
   );
 }
 
 function handleAddPerson(
   inputState: TInputState,
-  setPeople: Dispatch<React.SetStateAction<TPerson[]>>,
-  setInputState: Dispatch<React.SetStateAction<TInputState>>,
+  setPeople: SetPeopleAction,
+  setInputState: setInputStateAction,
 ) {
   const fieldValue = inputState.value.trim();
 
@@ -102,15 +105,38 @@ function handleAddPerson(
   const person = {
     id,
     name: fieldValue,
-    score: null,
+    roll: null,
     state: PersonState.IDLE,
   };
-  setPeople((prevState) => [...prevState, person]);
-  localStorage.setItem(id, JSON.stringify(person));
+
+  setPeople((prevState) => {
+    const updatedPeople = [...prevState, person];
+    localStorage.setItem(LocalStorageKey.PEOPLE, JSON.stringify(updatedPeople));
+
+    return updatedPeople;
+  });
   setInputState({ value: "", hasError: false });
 }
 
-function handleStart(setAppState: Dispatch<React.SetStateAction<AppState>>) {
+function handleStart(
+  people: TPerson[],
+  setPeople: SetPeopleAction,
+  setAppState: SetAppStateAction,
+  setHasErr: setHasErrAction,
+) {
+  if (people.length < 2) {
+    setHasErr(true);
+    return;
+  }
+
+  setPeople((prevState) => {
+    const activePerson = { ...prevState[0], state: PersonState.ACTIVE };
+    const updatedPeople = [activePerson, ...prevState.slice(1)];
+    localStorage.setItem(LocalStorageKey.PEOPLE, JSON.stringify(updatedPeople));
+
+    return updatedPeople;
+  });
+
   setAppState(AppState.IN_PROGRESS);
-  localStorage.setItem("app-state", AppState.IN_PROGRESS);
+  localStorage.setItem(LocalStorageKey.APP_STATE, AppState.IN_PROGRESS);
 }
